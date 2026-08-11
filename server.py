@@ -75,7 +75,7 @@ class ResearchResponse(BaseModel):
 
 
 # ── Health check endpoint ──────────────────────────────────────────────────────
-@app.head("/health")
+@app.get("/health")
 async def health_check():
     return {"status": "ok", "message": "Multi-Agent Research API is running"}
 
