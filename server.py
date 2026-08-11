@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 # Import LangGraph research graph from main.py
-from main import build_research_graph, ResearchState
+from main import build_research_graph, ResearchState, get_embeddings
 
 app = FastAPI(
     title="Multi-Agent Research & Analytics API",
@@ -22,11 +22,29 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Enable CORS for all origins
+
+@app.on_event("startup")
+async def warm_embedding_model():
+    """
+    The HuggingFace embedding model (all-MiniLM-L6-v2) is downloaded/loaded
+    lazily on first use. Loading it here at startup (rather than letting the
+    first user request trigger it) avoids that request hanging long enough
+    to hit Render's proxy timeout and return a 502.
+    """
+    try:
+        print("[Startup] Warming embedding model...")
+        get_embeddings()
+        print("[Startup] Embedding model ready.")
+    except Exception as e:
+        print(f"[Startup] Embedding model warm-up failed (non-fatal): {e}")
+
+# Enable CORS for all origins (no credentials/cookies needed by this app,
+# so allow_credentials stays False — combining "*" with credentials=True
+# is invalid per the CORS spec and browsers will silently block requests)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -141,20 +159,27 @@ async def run_research(request: ResearchRequest):
         raise HTTPException(status_code=500, detail=f"Multi-Agent execution error: {str(e)}")
 
 
-# ── Static files & frontend ────────────────────────────────────────────────────
+# ── Static files & frontend (optional) ─────────────────────────────────────────
+# This backend is deployed API-only (frontend is hosted separately, e.g. on
+# Vercel). If a static/ folder happens to exist alongside this file, it will
+# still be served for convenience; otherwise this is skipped entirely so the
+# app starts cleanly with no frontend files present.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 
-# Mount /static for CSS and JS assets
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+if os.path.isdir(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-
-@app.get("/", response_class=FileResponse)
-async def read_index():
-    index_path = os.path.join(STATIC_DIR, "index.html")
-    if os.path.exists(index_path):
-        return FileResponse(index_path, media_type="text/html")
-    raise HTTPException(status_code=404, detail=f"index.html not found at {index_path}")
+    @app.get("/", response_class=FileResponse)
+    async def read_index():
+        index_path = os.path.join(STATIC_DIR, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path, media_type="text/html")
+        raise HTTPException(status_code=404, detail=f"index.html not found at {index_path}")
+else:
+    @app.get("/")
+    async def read_root():
+        return {"status": "ok", "message": "Multi-Agent Research API is running. See /health and /api/research."}
 
 
 if __name__ == "__main__":
