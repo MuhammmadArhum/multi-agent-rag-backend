@@ -14,29 +14,13 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 # Import LangGraph research graph from main.py
-from main import build_research_graph, ResearchState, get_embeddings
+from main import build_research_graph, ResearchState
 
 app = FastAPI(
     title="Multi-Agent Research & Analytics API",
     description="API bridge for LangGraph RAG & Web Search Fallback system",
     version="1.0.0"
 )
-
-
-@app.on_event("startup")
-async def warm_embedding_model():
-    """
-    The HuggingFace embedding model (all-MiniLM-L6-v2) is downloaded/loaded
-    lazily on first use. Loading it here at startup (rather than letting the
-    first user request trigger it) avoids that request hanging long enough
-    to hit Render's proxy timeout and return a 502.
-    """
-    try:
-        print("[Startup] Warming embedding model...")
-        get_embeddings()
-        print("[Startup] Embedding model ready.")
-    except Exception as e:
-        print(f"[Startup] Embedding model warm-up failed (non-fatal): {e}")
 
 # Enable CORS for all origins (no credentials/cookies needed by this app,
 # so allow_credentials stays False — combining "*" with credentials=True
