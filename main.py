@@ -47,8 +47,10 @@ except ImportError:
 
 try:
     from langchain_community.tools import TavilySearchResults
+    from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 except ImportError:
     TavilySearchResults = None
+    TavilySearchAPIWrapper = None
 
 
 # Load Environment Variables from .env file (used only for standalone CLI runs)
@@ -263,9 +265,12 @@ def web_search_node(state: ResearchState) -> Dict[str, Any]:
     
     web_results: List[Dict[str, Any]] = []
     
-    if TavilySearchResults is not None and TAVILY_API_KEY and not TAVILY_API_KEY.startswith("your_"):
+    if TavilySearchResults is not None and TavilySearchAPIWrapper is not None and TAVILY_API_KEY and not TAVILY_API_KEY.startswith("your_"):
         try:
-            tavily = TavilySearchResults(tavily_api_key=TAVILY_API_KEY, max_results=2)
+            tavily = TavilySearchResults(
+                api_wrapper=TavilySearchAPIWrapper(tavily_api_key=TAVILY_API_KEY),
+                max_results=2,
+            )
             for q in queries[:2]: # Search top 2 queries to remain within rate limits
                 results = tavily.invoke({"query": q})
                 if isinstance(results, list):
@@ -498,9 +503,12 @@ def build_research_graph(
         print(f"\n[Web Search Fallback Node] Executing live Tavily search...")
         web_results: List[Dict[str, Any]] = []
         tavily_key = _tavily_key
-        if TavilySearchResults is not None and tavily_key and not tavily_key.startswith("your_"):
+        if TavilySearchResults is not None and TavilySearchAPIWrapper is not None and tavily_key and not tavily_key.startswith("your_"):
             try:
-                tavily = TavilySearchResults(tavily_api_key=tavily_key, max_results=2)
+                tavily = TavilySearchResults(
+                    api_wrapper=TavilySearchAPIWrapper(tavily_api_key=tavily_key),
+                    max_results=2,
+                )
                 for q in queries[:2]:
                     results = tavily.invoke({"query": q})
                     if isinstance(results, list):
