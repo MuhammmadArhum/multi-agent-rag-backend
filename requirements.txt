@@ -1,0 +1,22 @@
+# ── Web framework ────────────────────────────────────────────────────────────
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+python-dotenv==1.0.1
+
+# ── LangGraph / LangChain (pinned to a mutually-compatible set) ───────────────
+langgraph==0.2.62
+langchain-core==0.3.31
+langchain-community==0.3.14
+langchain-groq==0.2.3
+langchain-huggingface==0.1.2
+
+# ── Embeddings (CPU-only torch — see render.yaml buildCommand, which installs
+#    torch from the PyTorch CPU wheel index *before* this file so the huge
+#    CUDA/nvidia-* packages below are never pulled in on Render) ─────────────
+torch==2.5.1
+sentence-transformers==3.3.1
+
+# ── Vector store & web search ──────────────────────────────────────────────
+supabase==2.11.0
+tavily-python==0.5.0

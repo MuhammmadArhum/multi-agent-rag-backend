@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: multi-agent-rag-studio
+    env: python
+    plan: starter
+    region: oregon
+    buildCommand: >-
+      pip install --upgrade pip &&
+      pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch==2.5.1 &&
+      pip install --no-cache-dir -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: DOC_RELEVANCE_THRESHOLD
+        value: "2"
