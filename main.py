@@ -92,7 +92,7 @@ def get_groq_llm(groq_api_key: str = "", temperature: float = 0.2) -> Optional[A
         return None
     try:
         return ChatGroq(
-            model_name="llama-3.3-70b-versatile",
+            model_name="openai/gpt-oss-120b",
             groq_api_key=key,
             temperature=temperature
         )
